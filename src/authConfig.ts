@@ -6,7 +6,9 @@ export interface WhitelistedUser {
 export const ALLOWED_USERS: WhitelistedUser[] = [
     { email: 'nachobornan@gmail.com', name: 'Nacho' },
     { email: 'juarez.mirta@gmail.com', name: 'Mirta' },
-    { email: 'juanxx@gmail.com', name: 'Juan' } // Whitelisted name mapped as requested
+    { email: 'juanxx@gmail.com', name: 'Juan' }, // Whitelisted name mapped as requested
+    { email: 'nicobornanjuega@gmail.com', name: 'Nico' },
+    { email: 'nicolas.bornancini@gmail.com', name: 'Nicolás' }
 ];
 
 // Map emails array for compatibility with App.tsx gatekeeper
