@@ -356,9 +356,9 @@ export function TiemposPlay({ userEmail, setCurrentView }: TiemposPlayProps) {
                         const isWrong = wrongOptions.has(option);
 
                         let btnStyle = {
-                            padding: '1.1rem',
+                            padding: '1.2rem',
                             borderRadius: '16px',
-                            fontSize: '1.05rem',
+                            fontSize: '1.2rem',
                             fontWeight: 600,
                             cursor: (isSelected || isWrong) ? 'default' : 'pointer',
                             transition: 'all 0.2s',

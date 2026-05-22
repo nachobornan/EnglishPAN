@@ -431,14 +431,14 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem', paddingLeft: '0.25rem' }}>Inglés</h3>
                     {leftCol.map((item, idx) => {
-                        if (!item) return <div key={`empty-left-${idx}`} style={{ height: '54px' }} />;
+                        if (!item) return <div key={`empty-left-${idx}`} style={{ height: '58px' }} />;
                         
                         const isSelected = selectedLeft === item.id;
                         const isMatched = matchedIds.has(item.id);
                         const isWrong = wrongLeftId === item.id;
 
                         let btnStyle = {
-                            height: '54px',
+                            height: '58px',
                             borderRadius: '14px',
                             background: isSelected 
                                 ? 'rgba(255, 183, 3, 0.15)' 
@@ -461,8 +461,8 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
                                     : isSelected
                                         ? 'var(--primary)'
                                         : 'white',
-                            fontSize: '0.95rem',
-                            fontWeight: 500,
+                            fontSize: '1.1rem',
+                            fontWeight: 600,
                             cursor: 'pointer',
                             transition: 'all 0.2s',
                             display: 'flex',
@@ -489,14 +489,14 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem', paddingLeft: '0.25rem' }}>Español</h3>
                     {rightCol.map((item, idx) => {
-                        if (!item) return <div key={`empty-right-${idx}`} style={{ height: '54px' }} />;
+                        if (!item) return <div key={`empty-right-${idx}`} style={{ height: '58px' }} />;
                         
                         const isSelected = selectedRight === item.id;
                         const isMatched = matchedIds.has(item.id);
                         const isWrong = wrongRightId === item.id;
 
                         let btnStyle = {
-                            height: '54px',
+                            height: '58px',
                             borderRadius: '14px',
                             background: isSelected 
                                 ? 'rgba(255, 183, 3, 0.15)' 
@@ -519,8 +519,8 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
                                     : isSelected
                                         ? 'var(--primary)'
                                         : 'white',
-                            fontSize: '0.95rem',
-                            fontWeight: 500,
+                            fontSize: '1.1rem',
+                            fontWeight: 600,
                             cursor: 'pointer',
                             transition: 'all 0.2s',
                             display: 'flex',

@@ -84,20 +84,11 @@ export function Principal({ userEmail, setCurrentView }: PrincipalProps) {
                         <div>
                             <h3 style={{ fontSize: '1.25rem', color: 'white', fontWeight: 600 }}>Juego 2: Tiempos Verbales</h3>
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem', lineHeight: '1.4' }}>
-                                Practica estructuras gramaticales y conjugaciones en pasado, presente y futuro. ¡Pronto disponible!
+                                Practica la conjugación de verbos regulares e irregulares en pasado simple. ¡Responde correctamente y sube en el ranking!
                             </p>
                         </div>
                         <div style={{ marginTop: 'auto', width: '100%' }}>
-                            <button 
-                                className="btn" 
-                                style={{ 
-                                    width: '100%', 
-                                    background: 'rgba(255,255,255,0.05)', 
-                                    border: '1px solid rgba(255,255,255,0.1)', 
-                                    color: 'white',
-                                    pointerEvents: 'none'
-                                }}
-                            >
+                            <button className="btn btn-primary" style={{ width: '100%', pointerEvents: 'none' }}>
                                 Ver Ranking y Jugar
                             </button>
                         </div>
