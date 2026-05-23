@@ -35,6 +35,7 @@ export function TiemposPlay({ userEmail, setCurrentView }: TiemposPlayProps) {
     // Score states
     const [correctCount, setCorrectCount] = useState(0);
     const [incorrectCount, setIncorrectCount] = useState(0);
+    const [firstTryCorrect, setFirstTryCorrect] = useState(0);
     const [isGameOver, setIsGameOver] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -151,14 +152,14 @@ export function TiemposPlay({ userEmail, setCurrentView }: TiemposPlayProps) {
         }
     };
 
-    const saveGameResult = async (errors: number) => {
+    const saveGameResult = async (errors: number, firstTryCorrectScore: number) => {
         setIsSaving(true);
         try {
             const { error } = await supabase
                 .from('rankings')
                 .insert({
                     user_email: userEmail,
-                    correct_hits: 8,
+                    correct_hits: firstTryCorrectScore,
                     incorrect_hits: errors,
                     game_type: 'tiempos_verbales'
                 });
@@ -178,6 +179,11 @@ export function TiemposPlay({ userEmail, setCurrentView }: TiemposPlayProps) {
             playSound('success');
             setSelectedOption(option);
 
+            const isFirstTry = wrongOptions.size === 0;
+            if (isFirstTry) {
+                setFirstTryCorrect(c => c + 1);
+            }
+
             setTimeout(() => {
                 if (currentIndex + 1 < sessionVerbs.length) {
                     setCorrectCount(c => c + 1);
@@ -185,7 +191,8 @@ export function TiemposPlay({ userEmail, setCurrentView }: TiemposPlayProps) {
                 } else {
                     setCorrectCount(c => c + 1); // completes to 8
                     setIsGameOver(true);
-                    saveGameResult(incorrectCount);
+                    const finalFirstTryCorrect = firstTryCorrect + (isFirstTry ? 1 : 0);
+                    saveGameResult(incorrectCount, finalFirstTryCorrect);
                 }
             }, 800);
         } else {
@@ -204,6 +211,7 @@ export function TiemposPlay({ userEmail, setCurrentView }: TiemposPlayProps) {
         setCurrentIndex(0);
         setCorrectCount(0);
         setIncorrectCount(0);
+        setFirstTryCorrect(0);
         setSelectedOption(null);
         setWrongOptions(new Set());
         loadGameData();
@@ -221,7 +229,7 @@ export function TiemposPlay({ userEmail, setCurrentView }: TiemposPlayProps) {
     }
 
     if (isGameOver) {
-        const accuracy = Math.round((8 / (8 + incorrectCount)) * 100);
+        const accuracy = Math.round((firstTryCorrect / 8) * 100);
         return (
             <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '2.5rem 2rem', animation: 'fadeIn 0.3s ease-out' }}>
                 <img 
@@ -247,9 +255,9 @@ export function TiemposPlay({ userEmail, setCurrentView }: TiemposPlayProps) {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', width: '100%', maxWidth: '360px', marginBottom: '2rem' }}>
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Aciertos</p>
-                        <p style={{ color: 'var(--secondary)', fontSize: '1.5rem', fontWeight: 'bold', marginTop: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+                        <p style={{ color: 'var(--success)', fontSize: '1.5rem', fontWeight: 'bold', marginTop: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
                             <CheckCircle2 size={20} />
-                            8
+                            {firstTryCorrect}
                         </p>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>

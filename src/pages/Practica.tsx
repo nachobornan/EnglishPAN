@@ -53,6 +53,8 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
     // Scores
     const [correctCount, setCorrectCount] = useState(0);
     const [incorrectCount, setIncorrectCount] = useState(0);
+    const [firstTryCorrect, setFirstTryCorrect] = useState(0);
+    const [failedWordIds, setFailedWordIds] = useState<Set<string>>(new Set());
     const [isGameOver, setIsGameOver] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -61,11 +63,15 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
     const rightColRef = useRef(rightCol);
     const queueRef = useRef(queue);
     const incorrectCountRef = useRef(incorrectCount);
+    const firstTryCorrectRef = useRef(firstTryCorrect);
+    const failedWordIdsRef = useRef(failedWordIds);
 
     useEffect(() => { leftColRef.current = leftCol; }, [leftCol]);
     useEffect(() => { rightColRef.current = rightCol; }, [rightCol]);
     useEffect(() => { queueRef.current = queue; }, [queue]);
     useEffect(() => { incorrectCountRef.current = incorrectCount; }, [incorrectCount]);
+    useEffect(() => { firstTryCorrectRef.current = firstTryCorrect; }, [firstTryCorrect]);
+    useEffect(() => { failedWordIdsRef.current = failedWordIds; }, [failedWordIds]);
 
     // Initialize game
     useEffect(() => {
@@ -76,7 +82,7 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
     useEffect(() => {
         if (correctCount === 15) {
             setIsGameOver(true);
-            saveGameResult(incorrectCountRef.current);
+            saveGameResult(incorrectCountRef.current, firstTryCorrectRef.current);
         }
     }, [correctCount]);
 
@@ -88,6 +94,12 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
             if (selectedLeft === selectedRight) {
                 // Correct match
                 playSound('success');
+                
+                // Track correct matches on first try
+                if (!failedWordIdsRef.current.has(selectedLeft)) {
+                    setFirstTryCorrect(c => c + 1);
+                }
+
                 setMatchedIds(prev => {
                     const next = new Set(prev);
                     next.add(selectedLeft);
@@ -138,6 +150,14 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
                 setWrongLeftId(selectedLeft);
                 setWrongRightId(selectedRight);
                 setIncorrectCount(c => c + 1);
+                
+                // Add to failedWordIds to exclude from firstTryCorrect
+                setFailedWordIds(prev => {
+                    const next = new Set(prev);
+                    next.add(selectedLeft!);
+                    next.add(selectedRight!);
+                    return next;
+                });
 
                 const timer = setTimeout(() => {
                     setWrongLeftId(null);
@@ -251,14 +271,14 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
         }
     };
 
-    const saveGameResult = async (errors: number) => {
+    const saveGameResult = async (errors: number, firstTryCorrectScore: number) => {
         setIsSaving(true);
         try {
             const { error } = await supabase
                 .from('rankings')
                 .insert({
                     user_email: userEmail,
-                    correct_hits: 15,
+                    correct_hits: firstTryCorrectScore,
                     incorrect_hits: errors,
                     game_type: 'vocabulario'
                 });
@@ -274,6 +294,8 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
         setIsGameOver(false);
         setCorrectCount(0);
         setIncorrectCount(0);
+        setFirstTryCorrect(0);
+        setFailedWordIds(new Set());
         setSelectedLeft(null);
         setSelectedRight(null);
         setWrongLeftId(null);
@@ -313,7 +335,7 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
     }
 
     if (isGameOver) {
-        const accuracy = Math.round((15 / (15 + incorrectCount)) * 100);
+        const accuracy = Math.round((firstTryCorrect / 15) * 100);
         return (
             <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '2.5rem 2rem', animation: 'fadeIn 0.3s ease-out' }}>
                 <img 
@@ -339,9 +361,9 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', width: '100%', maxWidth: '360px', marginBottom: '2rem' }}>
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Aciertos</p>
-                        <p style={{ color: 'var(--secondary)', fontSize: '1.5rem', fontWeight: 'bold', marginTop: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+                        <p style={{ color: 'var(--success)', fontSize: '1.5rem', fontWeight: 'bold', marginTop: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
                             <CheckCircle2 size={20} />
-                            15
+                            {firstTryCorrect}
                         </p>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>

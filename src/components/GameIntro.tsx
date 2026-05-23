@@ -23,11 +23,17 @@ export function GameIntro({ title, description, mascot, gameType, userEmail, onS
         const fetchRankings = async () => {
             setLoading(true);
             try {
-                // Fetch top 10 rankings filtered by game type
+                // Calculate date 5 days ago (ISO string)
+                const fiveDaysAgo = new Date();
+                fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+                const dateLimit = fiveDaysAgo.toISOString();
+
+                // Fetch top 10 rankings filtered by game type and created in the last 5 days
                 const { data, error } = await supabase
                     .from('rankings')
                     .select('*')
                     .eq('game_type', gameType)
+                    .gte('created_at', dateLimit)
                     .order('correct_hits', { ascending: false })
                     .order('incorrect_hits', { ascending: true })
                     .order('created_at', { ascending: false })
