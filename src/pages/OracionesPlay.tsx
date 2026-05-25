@@ -81,13 +81,8 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
     const [isCurrentCompleted, setIsCurrentCompleted] = useState(false);
     const [wrongPartNum, setWrongPartNum] = useState<number | null>(null);
 
-    const autoAdvanceTimerRef = useRef<any>(null);
-
     useEffect(() => {
         loadGameData();
-        return () => {
-            if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
-        };
     }, []);
 
     // Set up sentence when current index changes
@@ -113,10 +108,7 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
             setIsCurrentCompleted(false);
             setWrongPartNum(null);
             
-            if (autoAdvanceTimerRef.current) {
-                clearTimeout(autoAdvanceTimerRef.current);
-                autoAdvanceTimerRef.current = null;
-            }
+
         }
     }, [currentIndex, sessionSentences]);
 
@@ -259,11 +251,7 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
                 setPoints(nextPoints);
                 pointsRef.current = nextPoints;
 
-                // Auto advance after 2.5 seconds
-                const timer = setTimeout(() => {
-                    handleNextSentence();
-                }, 2500);
-                autoAdvanceTimerRef.current = timer;
+
             } else {
                 playSound('success');
             }
@@ -286,10 +274,6 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
     };
 
     const handleNextSentence = () => {
-        if (autoAdvanceTimerRef.current) {
-            clearTimeout(autoAdvanceTimerRef.current);
-            autoAdvanceTimerRef.current = null;
-        }
 
         if (currentIndex + 1 < sessionSentences.length) {
             setCurrentIndex(idx => idx + 1);
