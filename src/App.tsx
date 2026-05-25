@@ -76,7 +76,7 @@ function App() {
         return (
           <GameIntro
             title="Armar Oraciones"
-            description="Ordena las palabras en inglés para formar la oración correcta. ¡Presiona 'Ayuda' si necesitas ver la traducción!"
+            description="Ordena las palabras en inglés para formar la oración correcta. ¡Usa el comodín si necesitas ver la traducción!"
             mascot={mascotImage}
             gameType="armar_oraciones"
             userEmail={session?.user?.email}

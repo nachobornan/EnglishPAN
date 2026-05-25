@@ -254,7 +254,7 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
                 playSound('round_complete');
                 setIsCurrentCompleted(true);
                 setShowTranslation(true); // Always reveal translation on completion
-                const earned = usedHelp ? 10 : 20;
+                const earned = usedHelp ? 16 : 20;
                 const nextPoints = points + earned;
                 setPoints(nextPoints);
                 pointsRef.current = nextPoints;
@@ -273,7 +273,7 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
             setWrongPartNum(part.partNum);
             
             const nextErrors = errors + 1;
-            const nextPoints = Math.max(0, points - 2);
+            const nextPoints = Math.max(0, points - 5);
             setErrors(nextErrors);
             setPoints(nextPoints);
             errorsRef.current = nextErrors;
@@ -487,7 +487,7 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
                             }}
                         >
                             <HelpCircle size={16} />
-                            ¿Ayuda por 10 puntos?
+                            Usar comodín (4 puntos)
                         </button>
                     )}
                 </div>
