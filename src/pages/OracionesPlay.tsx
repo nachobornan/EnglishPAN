@@ -218,7 +218,7 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
                 .from('rankings')
                 .insert({
                     user_email: userEmail,
-                    correct_hits: finalPoints,
+                    correct_hits: Math.max(0, finalPoints),
                     incorrect_hits: totalErrors,
                     game_type: 'armar_oraciones'
                 });
@@ -273,7 +273,7 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
             setWrongPartNum(part.partNum);
             
             const nextErrors = errors + 1;
-            const nextPoints = Math.max(0, points - 5);
+            const nextPoints = points - 5;
             setErrors(nextErrors);
             setPoints(nextPoints);
             errorsRef.current = nextErrors;
@@ -358,7 +358,7 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Puntos Totales</p>
                         <p style={{ color: 'var(--primary)', fontSize: '1.8rem', fontWeight: 'bold', marginTop: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
                             <Award size={24} />
-                            {points}
+                            {Math.max(0, points)}
                         </p>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.25rem 1rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -437,7 +437,7 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
                         <div style={{ textAlign: 'right' }}>
                             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block' }}>PUNTOS</span>
                             <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--primary)' }}>
-                                {points}
+                                {Math.max(0, points)}
                             </span>
                         </div>
                         <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)' }} />
