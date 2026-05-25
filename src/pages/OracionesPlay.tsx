@@ -61,6 +61,18 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
     const [isGameOver, setIsGameOver] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
+    // Refs to avoid stale closures in callbacks
+    const pointsRef = useRef(0);
+    const errorsRef = useRef(0);
+
+    useEffect(() => {
+        pointsRef.current = points;
+    }, [points]);
+
+    useEffect(() => {
+        errorsRef.current = errors;
+    }, [errors]);
+
     // Sentence state
     const [assembledIndices, setAssembledIndices] = useState<number[]>([]);
     const [shuffledParts, setShuffledParts] = useState<ScrambledPart[]>([]);
@@ -243,7 +255,9 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
                 setIsCurrentCompleted(true);
                 setShowTranslation(true); // Always reveal translation on completion
                 const earned = usedHelp ? 10 : 20;
-                setPoints(p => p + earned);
+                const nextPoints = points + earned;
+                setPoints(nextPoints);
+                pointsRef.current = nextPoints;
 
                 // Auto advance after 2.5 seconds
                 const timer = setTimeout(() => {
@@ -257,8 +271,13 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
             // Incorrect choice
             playSound('error');
             setWrongPartNum(part.partNum);
-            setErrors(e => e + 1);
-            setPoints(p => Math.max(0, p - 2));
+            
+            const nextErrors = errors + 1;
+            const nextPoints = Math.max(0, points - 2);
+            setErrors(nextErrors);
+            setPoints(nextPoints);
+            errorsRef.current = nextErrors;
+            pointsRef.current = nextPoints;
 
             setTimeout(() => {
                 setWrongPartNum(null);
@@ -276,7 +295,7 @@ export function OracionesPlay({ userEmail, setCurrentView }: OracionesPlayProps)
             setCurrentIndex(idx => idx + 1);
         } else {
             setIsGameOver(true);
-            saveGameResult(errors, points);
+            saveGameResult(errorsRef.current, pointsRef.current);
         }
     };
 
