@@ -23,3 +23,14 @@ export interface Verb {
     error2: string;
     created_at?: string;
 }
+
+export interface Sentence {
+    id: string;
+    traduccion: string;
+    parte1: string | null;
+    parte2: string | null;
+    parte3: string | null;
+    parte4: string | null;
+    parte5: string | null;
+    created_at?: string;
+}

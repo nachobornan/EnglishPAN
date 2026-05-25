@@ -9,7 +9,7 @@ interface GameIntroProps {
     title: string;
     description: string;
     mascot: string;
-    gameType: 'vocabulario' | 'tiempos_verbales';
+    gameType: 'vocabulario' | 'tiempos_verbales' | 'armar_oraciones';
     userEmail: string | undefined | null;
     onStart: () => void;
     onBack: () => void;
@@ -106,7 +106,9 @@ export function GameIntro({ title, description, mascot, gameType, userEmail, onS
                             <thead>
                                 <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--text-muted)', textAlign: 'left', fontSize: '0.85rem' }}>
                                     <th style={{ padding: '0.5rem 0.25rem' }}>Puesto / Usuario</th>
-                                    <th style={{ padding: '0.5rem 0.25rem', textAlign: 'center' }}>Aciertos</th>
+                                    <th style={{ padding: '0.5rem 0.25rem', textAlign: 'center' }}>
+                                        {gameType === 'armar_oraciones' ? 'Puntos' : 'Aciertos'}
+                                    </th>
                                     <th style={{ padding: '0.5rem 0.25rem', textAlign: 'center' }}>Errores</th>
                                     <th style={{ padding: '0.5rem 0.25rem', textAlign: 'right' }}>Fecha</th>
                                 </tr>

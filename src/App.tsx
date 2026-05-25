@@ -6,6 +6,7 @@ import { Library } from './pages/Library';
 import { Config } from './pages/Config';
 import { GameIntro } from './components/GameIntro';
 import { TiemposPlay } from './pages/TiemposPlay';
+import { OracionesPlay } from './pages/OracionesPlay';
 import mascotImage from './assets/mascot.png';
 import mascotThumbsUp from './assets/mascot_thumbsup.png';
 import Login from './components/Login';
@@ -46,7 +47,7 @@ function App() {
       case 'vocabulario_intro':
         return (
           <GameIntro
-            title="Juego 1: Vocabulario"
+            title="Vocabulario"
             description="Juego de emparejar palabras en inglés y español. ¡Completa las 15 palabras con la menor cantidad de errores posible!"
             mascot={mascotImage}
             gameType="vocabulario"
@@ -60,7 +61,7 @@ function App() {
       case 'tiempos_intro':
         return (
           <GameIntro
-            title="Juego 2: Tiempos Verbales"
+            title="Tiempos Verbales"
             description="Practica estructuras gramaticales y conjugaciones en pasado, presente y futuro."
             mascot={mascotThumbsUp}
             gameType="tiempos_verbales"
@@ -71,6 +72,20 @@ function App() {
         );
       case 'tiempos_play':
         return <TiemposPlay userEmail={session?.user?.email} setCurrentView={setCurrentView} />;
+      case 'oraciones_intro':
+        return (
+          <GameIntro
+            title="Armar Oraciones"
+            description="Ordena las palabras en inglés para formar la oración correcta. ¡Presiona 'Ayuda' si necesitas ver la traducción!"
+            mascot={mascotImage}
+            gameType="armar_oraciones"
+            userEmail={session?.user?.email}
+            onStart={() => setCurrentView('oraciones_play')}
+            onBack={() => setCurrentView('principal')}
+          />
+        );
+      case 'oraciones_play':
+        return <OracionesPlay userEmail={session?.user?.email} setCurrentView={setCurrentView} />;
       case 'library':
         return <Library />;
       case 'config':

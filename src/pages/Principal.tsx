@@ -1,5 +1,5 @@
 import mascotImage from '../assets/mascot.png';
-import { Flame, BookOpen, Clock, Play } from 'lucide-react';
+import { Flame, BookOpen, Clock, Play, Shuffle } from 'lucide-react';
 import { getUserName } from '../authConfig';
 
 interface PrincipalProps {
@@ -60,7 +60,7 @@ export function Principal({ userEmail, setCurrentView }: PrincipalProps) {
                             <BookOpen size={32} style={{ color: 'var(--primary)' }} />
                         </div>
                         <div>
-                            <h3 style={{ fontSize: '1.25rem', color: 'white', fontWeight: 600 }}>Juego 1: Vocabulario</h3>
+                            <h3 style={{ fontSize: '1.25rem', color: 'white', fontWeight: 600 }}>Vocabulario</h3>
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem', lineHeight: '1.4' }}>
                                 Juego de emparejar palabras en inglés y español. ¡Completa las 15 palabras con la menor cantidad de errores posible!
                             </p>
@@ -82,9 +82,31 @@ export function Principal({ userEmail, setCurrentView }: PrincipalProps) {
                             <Clock size={32} style={{ color: 'var(--primary-hover)' }} />
                         </div>
                         <div>
-                            <h3 style={{ fontSize: '1.25rem', color: 'white', fontWeight: 600 }}>Juego 2: Tiempos Verbales</h3>
+                            <h3 style={{ fontSize: '1.25rem', color: 'white', fontWeight: 600 }}>Tiempos Verbales</h3>
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem', lineHeight: '1.4' }}>
                                 Practica la conjugación de verbos regulares e irregulares en pasado simple. ¡Responde correctamente y sube en el ranking!
+                            </p>
+                        </div>
+                        <div style={{ marginTop: 'auto', width: '100%' }}>
+                            <button className="btn btn-primary" style={{ width: '100%', pointerEvents: 'none' }}>
+                                Ver Ranking y Jugar
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Juego 3: Armar Oraciones */}
+                    <div 
+                        className="glass-panel game-card"
+                        onClick={() => setCurrentView('oraciones_intro')}
+                        style={{ padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+                    >
+                        <div style={{ background: 'rgba(255, 224, 102, 0.1)', padding: '1rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Shuffle size={32} style={{ color: '#FFE066' }} />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '1.25rem', color: 'white', fontWeight: 600 }}>Armar Oraciones</h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem', lineHeight: '1.4' }}>
+                                Ordena las palabras mezcladas para armar la oración correcta en inglés. ¡Usa pistas o resuélvelo por el puntaje máximo!
                             </p>
                         </div>
                         <div style={{ marginTop: 'auto', width: '100%' }}>
