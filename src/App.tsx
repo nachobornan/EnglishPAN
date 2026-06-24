@@ -3,7 +3,6 @@ import { BottomNav } from './components/BottomNav';
 import { Principal } from './pages/Principal';
 import { Practica } from './pages/Practica';
 import { Library } from './pages/Library';
-import { Config } from './pages/Config';
 import { GameIntro } from './components/GameIntro';
 import { TiemposPlay } from './pages/TiemposPlay';
 import { OracionesPlay } from './pages/OracionesPlay';
@@ -12,7 +11,7 @@ import mascotThumbsUp from './assets/mascot_thumbsup.png';
 import Login from './components/Login';
 import { supabase } from './lib/supabase';
 import { ALLOWED_EMAILS, getUserName } from './authConfig';
-import { LogOut } from 'lucide-react';
+import { LogOut, ShieldAlert } from 'lucide-react';
 import './index.css';
 
 function App() {
@@ -86,10 +85,30 @@ function App() {
         );
       case 'oraciones_play':
         return <OracionesPlay userEmail={session?.user?.email} setCurrentView={setCurrentView} />;
-      case 'library':
-        return <Library />;
-      case 'config':
-        return <Config />;
+      case 'library': {
+        const isAdmin = session?.user?.email?.toLowerCase() === ALLOWED_EMAILS[0];
+        if (isAdmin) {
+          return <Library />;
+        }
+        return (
+          <div className="glass-panel animate-fadeIn" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '3rem 2rem', maxWidth: '480px', margin: '2rem auto' }}>
+            <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '1rem', borderRadius: '50%', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ShieldAlert size={40} style={{ color: 'var(--danger)' }} />
+            </div>
+            <h2 style={{ fontSize: '1.5rem', color: 'white', marginBottom: '1rem', fontWeight: 700 }}>Acceso Restringido 🔒</h2>
+            <p style={{ color: 'var(--text-muted)', lineHeight: '1.6', fontSize: '0.95rem', marginBottom: '1.5rem' }}>
+              Solo el administrador puede agregar nuevas palabras, verbos y oraciones. Ponte en contacto con el para sugerir nuevos desafíos.
+            </p>
+            <button 
+              onClick={() => setCurrentView('principal')} 
+              className="btn btn-primary"
+              style={{ width: '100%', maxWidth: '200px' }}
+            >
+              Volver al Inicio
+            </button>
+          </div>
+        );
+      }
       default:
         return <Principal userEmail={session?.user?.email} setCurrentView={setCurrentView} />;
     }

@@ -48,6 +48,8 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
     const [matchedIds, setMatchedIds] = useState<Set<string>>(new Set());
     const [wrongLeftId, setWrongLeftId] = useState<string | null>(null);
     const [wrongRightId, setWrongRightId] = useState<string | null>(null);
+    const [correctLeftId, setCorrectLeftId] = useState<string | null>(null);
+    const [correctRightId, setCorrectRightId] = useState<string | null>(null);
     const [isChecking, setIsChecking] = useState(false);
 
     // Scores
@@ -65,6 +67,7 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
     const incorrectCountRef = useRef(incorrectCount);
     const firstTryCorrectRef = useRef(firstTryCorrect);
     const failedWordIdsRef = useRef(failedWordIds);
+    const correctCountRef = useRef(correctCount);
 
     useEffect(() => { leftColRef.current = leftCol; }, [leftCol]);
     useEffect(() => { rightColRef.current = rightCol; }, [rightCol]);
@@ -72,6 +75,7 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
     useEffect(() => { incorrectCountRef.current = incorrectCount; }, [incorrectCount]);
     useEffect(() => { firstTryCorrectRef.current = firstTryCorrect; }, [firstTryCorrect]);
     useEffect(() => { failedWordIdsRef.current = failedWordIds; }, [failedWordIds]);
+    useEffect(() => { correctCountRef.current = correctCount; }, [correctCount]);
 
     // Initialize game
     useEffect(() => {
@@ -83,6 +87,22 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
         if (correctCount === 15) {
             setIsGameOver(true);
             saveGameResult(incorrectCountRef.current, firstTryCorrectRef.current);
+        }
+    }, [correctCount]);
+
+    // Handle transition to the next round of 5 words
+    useEffect(() => {
+        if (correctCount > 0 && correctCount % 5 === 0 && correctCount < 15) {
+            setIsChecking(true);
+            const timer = setTimeout(() => {
+                const next5 = queueRef.current.slice(0, 5);
+                setQueue(prev => prev.slice(5));
+                setLeftCol([...next5].sort(() => 0.5 - Math.random()));
+                setRightCol([...next5].sort(() => 0.5 - Math.random()));
+                setMatchedIds(new Set());
+                setIsChecking(false);
+            }, 800);
+            return () => clearTimeout(timer);
         }
     }, [correctCount]);
 
@@ -100,47 +120,29 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
                     setFirstTryCorrect(c => c + 1);
                 }
 
-                setMatchedIds(prev => {
-                    const next = new Set(prev);
-                    next.add(selectedLeft);
-                    return next;
-                });
+                setCorrectLeftId(selectedLeft);
+                setCorrectRightId(selectedRight);
 
                 const timer = setTimeout(() => {
-                    // Find positions of the matched pair using refs
-                    const leftIdx = leftColRef.current.findIndex(w => w?.id === selectedLeft);
-                    const rightIdx = rightColRef.current.findIndex(w => w?.id === selectedRight);
+                    const nextCount = correctCountRef.current + 1;
 
-                    const nextWord = queueRef.current[0] || null;
-
-                    setLeftCol(prev => {
-                        const next = [...prev];
-                        if (leftIdx !== -1) next[leftIdx] = nextWord;
-                        return next;
-                    });
-
-                    setRightCol(prev => {
-                        const next = [...prev];
-                        if (rightIdx !== -1) next[rightIdx] = nextWord;
-                        return next;
-                    });
-
-                    if (queueRef.current.length > 0) {
-                        setQueue(prev => prev.slice(1));
-                    }
-
-                    // Remove current matched item from set (it's getting replaced)
                     setMatchedIds(prev => {
                         const next = new Set(prev);
-                        next.delete(selectedLeft);
+                        next.add(selectedLeft);
                         return next;
                     });
 
-                    setCorrectCount(c => c + 1);
-
+                    setCorrectLeftId(null);
+                    setCorrectRightId(null);
                     setSelectedLeft(null);
                     setSelectedRight(null);
-                    setIsChecking(false);
+                    setCorrectCount(nextCount);
+
+                    // If round is ending, do NOT unlock checking yet (transition effect will handle it)
+                    const isRoundEnding = nextCount % 5 === 0 && nextCount < 15;
+                    if (!isRoundEnding) {
+                        setIsChecking(false);
+                    }
                 }, 500);
 
                 return () => clearTimeout(timer);
@@ -257,14 +259,15 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
             const initial5 = selected.slice(0, 5);
             const remaining = selected.slice(5);
 
-            setLeftCol(initial5);
+            setLeftCol([...initial5].sort(() => 0.5 - Math.random()));
             setRightCol([...initial5].sort(() => 0.5 - Math.random()));
             setQueue(remaining);
         } catch (err) {
             console.error("Error setting up game:", err);
-            const selected = BACKUP_WORDS.slice(0, 15);
-            setLeftCol(selected.slice(0, 5));
-            setRightCol([...selected.slice(0, 5)].sort(() => 0.5 - Math.random()));
+            const selected = BACKUP_WORDS.slice(0, 15).sort(() => 0.5 - Math.random());
+            const initial5 = selected.slice(0, 5);
+            setLeftCol([...initial5].sort(() => 0.5 - Math.random()));
+            setRightCol([...initial5].sort(() => 0.5 - Math.random()));
             setQueue(selected.slice(5));
         } finally {
             setLoading(false);
@@ -300,6 +303,8 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
         setSelectedRight(null);
         setWrongLeftId(null);
         setWrongRightId(null);
+        setCorrectLeftId(null);
+        setCorrectRightId(null);
         setMatchedIds(new Set());
         setIsChecking(false);
         loadGameData();
@@ -427,7 +432,20 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
                         <h1 style={{ fontSize: '1.5rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             Práctica 🎯
                         </h1>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.2rem', marginBottom: '0.25rem' }}>
+                            <span style={{ 
+                                fontSize: '0.75rem', 
+                                fontWeight: 'bold', 
+                                background: 'rgba(255, 183, 3, 0.1)', 
+                                color: 'var(--primary)', 
+                                padding: '0.25rem 0.6rem', 
+                                borderRadius: '12px',
+                                border: '1px solid rgba(255, 183, 3, 0.2)' 
+                            }}>
+                                Ronda {Math.min(3, Math.floor(correctCount / 5) + 1)} de 3
+                            </span>
+                        </div>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                             Selecciona una palabra en inglés y su traducción correcta.
                         </p>
                     </div>
@@ -458,25 +476,26 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
                         const isSelected = selectedLeft === item.id;
                         const isMatched = matchedIds.has(item.id);
                         const isWrong = wrongLeftId === item.id;
-
+                        const isCorrect = correctLeftId === item.id;
+ 
                         let btnStyle = {
                             height: '58px',
                             borderRadius: '14px',
-                            background: isSelected 
-                                ? 'rgba(255, 183, 3, 0.15)' 
-                                : isMatched 
-                                    ? 'rgba(16, 185, 129, 0.15)'
+                            background: isCorrect
+                                ? 'rgba(16, 185, 129, 0.15)'
+                                : isSelected 
+                                    ? 'rgba(255, 183, 3, 0.15)' 
                                     : isWrong
                                         ? 'rgba(255, 68, 68, 0.15)'
                                         : 'rgba(255,255,255,0.03)',
-                            border: isSelected
-                                ? '1px solid var(--primary)'
-                                : isMatched
-                                    ? '1px solid var(--success)'
+                            border: isCorrect
+                                ? '1px solid var(--success)'
+                                : isSelected
+                                    ? '1px solid var(--primary)'
                                     : isWrong
                                         ? '1px solid var(--danger)'
                                         : '1px solid rgba(255, 255, 255, 0.08)',
-                            color: isMatched
+                            color: isCorrect
                                 ? 'var(--success)'
                                 : isWrong
                                     ? 'var(--danger)'
@@ -485,15 +504,17 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
                                         : 'white',
                             fontSize: '1.1rem',
                             fontWeight: 600,
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
+                            cursor: isMatched ? 'default' : 'pointer',
+                            transition: 'all 0.2s, opacity 0.3s ease',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             boxShadow: isSelected ? '0 0 12px rgba(255, 183, 3, 0.2)' : 'none',
-                            animation: isWrong ? 'shake 0.3s' : 'none'
+                            animation: isWrong ? 'shake 0.3s' : 'none',
+                            opacity: isMatched ? 0 : 1,
+                            pointerEvents: isMatched ? 'none' as const : 'auto' as const
                         };
-
+ 
                         return (
                             <button
                                 key={`left-${item.id}-${idx}`}
@@ -516,25 +537,26 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
                         const isSelected = selectedRight === item.id;
                         const isMatched = matchedIds.has(item.id);
                         const isWrong = wrongRightId === item.id;
-
+                        const isCorrect = correctRightId === item.id;
+ 
                         let btnStyle = {
                             height: '58px',
                             borderRadius: '14px',
-                            background: isSelected 
-                                ? 'rgba(255, 183, 3, 0.15)' 
-                                : isMatched 
-                                    ? 'rgba(16, 185, 129, 0.15)'
+                            background: isCorrect
+                                ? 'rgba(16, 185, 129, 0.15)'
+                                : isSelected 
+                                    ? 'rgba(255, 183, 3, 0.15)' 
                                     : isWrong
                                         ? 'rgba(255, 68, 68, 0.15)'
                                         : 'rgba(255,255,255,0.03)',
-                            border: isSelected
-                                ? '1px solid var(--primary)'
-                                : isMatched
-                                    ? '1px solid var(--success)'
+                            border: isCorrect
+                                ? '1px solid var(--success)'
+                                : isSelected
+                                    ? '1px solid var(--primary)'
                                     : isWrong
                                         ? '1px solid var(--danger)'
                                         : '1px solid rgba(255, 255, 255, 0.08)',
-                            color: isMatched
+                            color: isCorrect
                                 ? 'var(--success)'
                                 : isWrong
                                     ? 'var(--danger)'
@@ -543,15 +565,17 @@ export function Practica({ userEmail, setCurrentView }: PracticaProps) {
                                         : 'white',
                             fontSize: '1.1rem',
                             fontWeight: 600,
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
+                            cursor: isMatched ? 'default' : 'pointer',
+                            transition: 'all 0.2s, opacity 0.3s ease',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             boxShadow: isSelected ? '0 0 12px rgba(255, 183, 3, 0.2)' : 'none',
-                            animation: isWrong ? 'shake 0.3s' : 'none'
+                            animation: isWrong ? 'shake 0.3s' : 'none',
+                            opacity: isMatched ? 0 : 1,
+                            pointerEvents: isMatched ? 'none' as const : 'auto' as const
                         };
-
+ 
                         return (
                             <button
                                 key={`right-${item.id}-${idx}`}

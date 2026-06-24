@@ -1,4 +1,4 @@
-import { Home, BookOpen, Settings } from 'lucide-react';
+import { Home, BookOpen } from 'lucide-react';
 
 interface BottomNavProps {
     currentView: string;
@@ -9,12 +9,11 @@ export function BottomNav({ currentView, setCurrentView }: BottomNavProps) {
     const tabs = [
         { id: 'principal', label: 'Inicio', icon: Home },
         { id: 'library', label: 'Biblioteca', icon: BookOpen },
-        { id: 'config', label: 'Ajustes', icon: Settings },
     ];
 
     // Determine if currentView is a sub-view of 'principal' (e.g. game intro/play screens) to highlight the Home tab
     const getActiveTab = (view: string) => {
-        if (['principal', 'vocabulario_intro', 'vocabulario_play', 'tiempos_intro', 'tiempos_play'].includes(view)) {
+        if (['principal', 'vocabulario_intro', 'vocabulario_play', 'tiempos_intro', 'tiempos_play', 'oraciones_intro', 'oraciones_play'].includes(view)) {
             return 'principal';
         }
         return view;
