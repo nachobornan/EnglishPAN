@@ -11,13 +11,16 @@ import mascotThumbsUp from './assets/mascot_thumbsup.png';
 import Login from './components/Login';
 import { supabase } from './lib/supabase';
 import { ALLOWED_EMAILS, getUserName } from './authConfig';
-import { LogOut, ShieldAlert } from 'lucide-react';
+import { LogOut, ShieldAlert, Download } from 'lucide-react';
+import { PWABadge } from './components/PWABadge';
+import { usePWAInstall } from './hooks/usePWAInstall';
 import './index.css';
 
 function App() {
   const [currentView, setCurrentView] = useState('principal');
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const { isInstallable, promptInstall } = usePWAInstall();
 
   // Authentication Setup
   useEffect(() => {
@@ -146,7 +149,18 @@ function App() {
         {renderView()}
       </div>
       <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
+      <PWABadge />
       <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+        {isInstallable && (
+          <button
+            onClick={promptInstall}
+            className="px-3 py-1.5 bg-indigo-600/90 hover:bg-indigo-500 backdrop-blur-md text-white text-xs font-semibold rounded-full shadow-lg transition cursor-pointer flex items-center gap-1.5"
+            title="Instalar Aplicación"
+          >
+            <Download size={14} />
+            <span>Instalar App</span>
+          </button>
+        )}
         <span className="text-xs bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full text-white/90">
           {getUserName(session?.user?.email)}
         </span>
