@@ -34,3 +34,13 @@ export interface Sentence {
     parte5: string | null;
     created_at?: string;
 }
+
+export interface VerbPro {
+    id: string;
+    sentence: string;
+    correctverbform: string;
+    wrongtverbform1: string;
+    wrongtverbform2: string;
+    traduction: string;
+    created_at?: string;
+}

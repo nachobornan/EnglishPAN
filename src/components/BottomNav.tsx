@@ -13,7 +13,7 @@ export function BottomNav({ currentView, setCurrentView }: BottomNavProps) {
 
     // Determine if currentView is a sub-view of 'principal' (e.g. game intro/play screens) to highlight the Home tab
     const getActiveTab = (view: string) => {
-        if (['principal', 'vocabulario_intro', 'vocabulario_play', 'tiempos_intro', 'tiempos_play', 'oraciones_intro', 'oraciones_play'].includes(view)) {
+        if (['principal', 'vocabulario_intro', 'vocabulario_play', 'tiempos_intro', 'tiempos_play', 'oraciones_intro', 'oraciones_play', 'tiempos_pro_intro', 'tiempos_pro_play'].includes(view)) {
             return 'principal';
         }
         return view;

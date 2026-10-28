@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Word, Verb, Sentence } from '../types';
+import { Word, Verb, Sentence, VerbPro } from '../types';
 import { Loader } from '../components/Loader';
-import { Plus, Edit, Trash, Search, BookOpen, AlertCircle, Sparkles, Clock, Shuffle } from 'lucide-react';
+import { Plus, Edit, Trash, Search, BookOpen, AlertCircle, Sparkles, Clock, Shuffle, Zap, CheckCircle2 } from 'lucide-react';
+import { BACKUP_VERBS_PRO, LOCAL_VERBS_PRO_KEY } from './TiemposProPlay';
 
 const BACKUP_WORDS: Word[] = [
     { id: 'b1', word: 'cat', translation: 'gato' },
@@ -80,7 +81,7 @@ const BACKUP_SENTENCES: Sentence[] = [
 ];
 
 export function Library() {
-    const [activeTab, setActiveTab] = useState<'vocabulario' | 'tiempos_verbales' | 'oraciones'>('vocabulario');
+    const [activeTab, setActiveTab] = useState<'vocabulario' | 'tiempos_verbales' | 'oraciones' | 'tiempos_pro'>('vocabulario');
     
     // Words states
     const [words, setWords] = useState<Word[]>([]);
@@ -99,6 +100,12 @@ export function Library() {
     const [loadingSentences, setLoadingSentences] = useState(true);
     const [isLocalModeSentences, setIsLocalModeSentences] = useState(false);
     const [searchQuerySentences, setSearchQuerySentences] = useState('');
+
+    // Tiempos Pro states
+    const [verbsPro, setVerbsPro] = useState<VerbPro[]>([]);
+    const [loadingVerbsPro, setLoadingVerbsPro] = useState(true);
+    const [isLocalModeVerbsPro, setIsLocalModeVerbsPro] = useState(false);
+    const [searchQueryVerbsPro, setSearchQueryVerbsPro] = useState('');
 
     // Word Modal state
     const [isWordModalOpen, setIsWordModalOpen] = useState(false);
@@ -131,10 +138,22 @@ export function Library() {
     const [isSavingSentence, setIsSavingSentence] = useState(false);
     const [modalErrorSentence, setModalErrorSentence] = useState<string | null>(null);
 
+    // VerbPro Modal state
+    const [isVerbProModalOpen, setIsVerbProModalOpen] = useState(false);
+    const [editingVerbPro, setEditingVerbPro] = useState<VerbPro | null>(null);
+    const [sentenceInputPro, setSentenceInputPro] = useState('');
+    const [correctVerbFormInput, setCorrectVerbFormInput] = useState('');
+    const [wrongVerbForm1Input, setWrongVerbForm1Input] = useState('');
+    const [wrongVerbForm2Input, setWrongVerbForm2Input] = useState('');
+    const [traductionInputPro, setTraductionInputPro] = useState('');
+    const [isSavingVerbPro, setIsSavingVerbPro] = useState(false);
+    const [modalErrorVerbPro, setModalErrorVerbPro] = useState<string | null>(null);
+
     useEffect(() => {
         loadWords();
         loadVerbs();
         loadSentences();
+        loadVerbsPro();
     }, []);
 
     // Load words from Supabase or LocalStorage
@@ -606,6 +625,172 @@ export function Library() {
         setModalErrorVerb(null);
     };
 
+    // Load verbs_pro from Supabase or LocalStorage
+    const loadVerbsPro = async () => {
+        setLoadingVerbsPro(true);
+        try {
+            let list: VerbPro[] = [];
+            const { data, error } = await supabase
+                .from('verbs_pro')
+                .select('*')
+                .order('sentence', { ascending: true });
+
+            if (error) {
+                console.warn("Supabase connection failed. Reading verbs_pro from local cache.");
+                const cached = localStorage.getItem(LOCAL_VERBS_PRO_KEY);
+                if (cached) {
+                    list = JSON.parse(cached);
+                } else {
+                    list = BACKUP_VERBS_PRO;
+                    localStorage.setItem(LOCAL_VERBS_PRO_KEY, JSON.stringify(list));
+                }
+                setIsLocalModeVerbsPro(true);
+            } else {
+                list = data || [];
+                setIsLocalModeVerbsPro(false);
+                localStorage.setItem(LOCAL_VERBS_PRO_KEY, JSON.stringify(list));
+            }
+            setVerbsPro(list);
+        } catch (err) {
+            console.error("Error loading verbs_pro library:", err);
+            const cached = localStorage.getItem(LOCAL_VERBS_PRO_KEY);
+            setVerbsPro(cached ? JSON.parse(cached) : BACKUP_VERBS_PRO);
+            setIsLocalModeVerbsPro(true);
+        } finally {
+            setLoadingVerbsPro(false);
+        }
+    };
+
+    // Save VerbPro (Add or Edit)
+    const handleSaveVerbPro = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const sentenceText = sentenceInputPro.trim();
+        const correctForm = correctVerbFormInput.trim();
+        const wrong1 = wrongVerbForm1Input.trim();
+        const wrong2 = wrongVerbForm2Input.trim();
+        const traductionText = traductionInputPro.trim();
+
+        if (!sentenceText || !correctForm || !wrong1 || !wrong2 || !traductionText) {
+            setModalErrorVerbPro('Todos los campos son obligatorios.');
+            return;
+        }
+
+        if (!sentenceText.includes('___')) {
+            setModalErrorVerbPro('La oración debe incluir "___" donde va el verbo.');
+            return;
+        }
+
+        setIsSavingVerbPro(true);
+        setModalErrorVerbPro(null);
+
+        try {
+            const verbProData = {
+                sentence: sentenceText,
+                correctverbform: correctForm,
+                wrongtverbform1: wrong1,
+                wrongtverbform2: wrong2,
+                traduction: traductionText
+            };
+
+            if (isLocalModeVerbsPro) {
+                let nextVerbsPro = [...verbsPro];
+                if (editingVerbPro) {
+                    nextVerbsPro = nextVerbsPro.map(vp => vp.id === editingVerbPro.id 
+                        ? { ...vp, ...verbProData } 
+                        : vp
+                    );
+                } else {
+                    const newVerbPro: VerbPro = {
+                        id: 'local_verbpro_' + Date.now(),
+                        ...verbProData
+                    };
+                    nextVerbsPro = [newVerbPro, ...nextVerbsPro];
+                }
+                nextVerbsPro.sort((a, b) => a.sentence.localeCompare(b.sentence));
+                setVerbsPro(nextVerbsPro);
+                localStorage.setItem(LOCAL_VERBS_PRO_KEY, JSON.stringify(nextVerbsPro));
+                closeVerbProModal();
+            } else {
+                if (editingVerbPro) {
+                    const { error } = await supabase
+                        .from('verbs_pro')
+                        .update(verbProData)
+                        .eq('id', editingVerbPro.id);
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabase
+                        .from('verbs_pro')
+                        .insert(verbProData);
+                    if (error) throw error;
+                }
+                await loadVerbsPro();
+                closeVerbProModal();
+            }
+        } catch (err: any) {
+            console.error("Failed to save verb_pro:", err);
+            setModalErrorVerbPro('Error al guardar la oración Pro. Inténtalo de nuevo.');
+        } finally {
+            setIsSavingVerbPro(false);
+        }
+    };
+
+    // Delete VerbPro
+    const handleDeleteVerbPro = async (id: string) => {
+        if (!confirm('¿Estás seguro de que quieres eliminar esta oración Pro?')) return;
+
+        try {
+            if (isLocalModeVerbsPro) {
+                const nextVerbsPro = verbsPro.filter(vp => vp.id !== id);
+                setVerbsPro(nextVerbsPro);
+                localStorage.setItem(LOCAL_VERBS_PRO_KEY, JSON.stringify(nextVerbsPro));
+            } else {
+                const { error } = await supabase
+                    .from('verbs_pro')
+                    .delete()
+                    .eq('id', id);
+                if (error) throw error;
+                await loadVerbsPro();
+            }
+        } catch (err) {
+            console.error("Error deleting verb_pro:", err);
+            alert('No se pudo eliminar la oración Pro. Inténtalo de nuevo.');
+        }
+    };
+
+    // VerbPro Modal operations
+    const openAddVerbProModal = () => {
+        setEditingVerbPro(null);
+        setSentenceInputPro('');
+        setCorrectVerbFormInput('');
+        setWrongVerbForm1Input('');
+        setWrongVerbForm2Input('');
+        setTraductionInputPro('');
+        setModalErrorVerbPro(null);
+        setIsVerbProModalOpen(true);
+    };
+
+    const openEditVerbProModal = (verbPro: VerbPro) => {
+        setEditingVerbPro(verbPro);
+        setSentenceInputPro(verbPro.sentence);
+        setCorrectVerbFormInput(verbPro.correctverbform);
+        setWrongVerbForm1Input(verbPro.wrongtverbform1);
+        setWrongVerbForm2Input(verbPro.wrongtverbform2);
+        setTraductionInputPro(verbPro.traduction);
+        setModalErrorVerbPro(null);
+        setIsVerbProModalOpen(true);
+    };
+
+    const closeVerbProModal = () => {
+        setIsVerbProModalOpen(false);
+        setEditingVerbPro(null);
+        setSentenceInputPro('');
+        setCorrectVerbFormInput('');
+        setWrongVerbForm1Input('');
+        setWrongVerbForm2Input('');
+        setTraductionInputPro('');
+        setModalErrorVerbPro(null);
+    };
+
     // Filters
     const filteredWords = words.filter(w => 
         w.word.toLowerCase().includes(searchQueryWords.toLowerCase()) ||
@@ -627,7 +812,13 @@ export function Library() {
         (s.parte5 && s.parte5.toLowerCase().includes(searchQuerySentences.toLowerCase()))
     );
 
-    const isAnyLocalMode = isLocalModeWords || isLocalModeVerbs || isLocalModeSentences;
+    const filteredVerbsPro = verbsPro.filter(vp => 
+        vp.sentence.toLowerCase().includes(searchQueryVerbsPro.toLowerCase()) ||
+        vp.correctverbform.toLowerCase().includes(searchQueryVerbsPro.toLowerCase()) ||
+        vp.traduction.toLowerCase().includes(searchQueryVerbsPro.toLowerCase())
+    );
+
+    const isAnyLocalMode = isLocalModeWords || isLocalModeVerbs || isLocalModeSentences || isLocalModeVerbsPro;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
@@ -660,11 +851,12 @@ export function Library() {
             </div>
 
             {/* Tab Selector */}
-            <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: '0.4rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)', width: '100%', maxWidth: '580px' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', padding: '0.4rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)', width: '100%', maxWidth: '720px', flexWrap: 'wrap' }}>
                 <button 
                     className={`btn ${activeTab === 'vocabulario' ? 'btn-primary' : ''}`}
                     style={{ 
                         flex: 1, 
+                        minWidth: '130px',
                         padding: '0.7rem 0.5rem', 
                         background: activeTab === 'vocabulario' ? '' : 'transparent', 
                         border: 'none', 
@@ -687,6 +879,7 @@ export function Library() {
                     className={`btn ${activeTab === 'tiempos_verbales' ? 'btn-primary' : ''}`}
                     style={{ 
                         flex: 1, 
+                        minWidth: '130px',
                         padding: '0.7rem 0.5rem', 
                         background: activeTab === 'tiempos_verbales' ? '' : 'transparent', 
                         border: 'none', 
@@ -709,6 +902,7 @@ export function Library() {
                     className={`btn ${activeTab === 'oraciones' ? 'btn-primary' : ''}`}
                     style={{ 
                         flex: 1, 
+                        minWidth: '130px',
                         padding: '0.7rem 0.5rem', 
                         background: activeTab === 'oraciones' ? '' : 'transparent', 
                         border: 'none', 
@@ -726,6 +920,29 @@ export function Library() {
                 >
                     <Shuffle size={16} />
                     Armar Oraciones
+                </button>
+                <button 
+                    className={`btn ${activeTab === 'tiempos_pro' ? 'btn-primary' : ''}`}
+                    style={{ 
+                        flex: 1, 
+                        minWidth: '130px',
+                        padding: '0.7rem 0.5rem', 
+                        background: activeTab === 'tiempos_pro' ? '' : 'transparent', 
+                        border: 'none', 
+                        color: activeTab === 'tiempos_pro' ? 'navy' : 'white', 
+                        cursor: 'pointer', 
+                        borderRadius: '12px',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.4rem',
+                        fontSize: '0.85rem'
+                    }}
+                    onClick={() => setActiveTab('tiempos_pro')}
+                >
+                    <Zap size={16} />
+                    Tiempos Pro
                 </button>
             </div>
 
@@ -976,6 +1193,113 @@ export function Library() {
                     {!loadingSentences && sentences.length > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                             Total en biblioteca: <strong style={{ color: 'white', marginLeft: '0.25rem' }}>{sentences.length} oraciones</strong>
+                        </div>
+                    )}
+                </>
+            )}
+
+            {/* TAB 4: TIEMPOS VERBALES PRO */}
+            {activeTab === 'tiempos_pro' && (
+                <>
+                    {/* Actions & Search */}
+                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
+                            <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <input 
+                                type="text" 
+                                className="input-glass" 
+                                value={searchQueryVerbsPro}
+                                onChange={(e) => setSearchQueryVerbsPro(e.target.value)}
+                                placeholder="Buscar por oración, verbo correcto o traducción..." 
+                                style={{ paddingLeft: '2.8rem' }}
+                            />
+                        </div>
+                        <button className="btn btn-primary" onClick={openAddVerbProModal}>
+                            <Plus size={18} />
+                            Agregar Oración Pro
+                        </button>
+                    </div>
+
+                    {/* Verbs Pro Table */}
+                    <div className="glass-panel" style={{ padding: '1.5rem', overflow: 'hidden' }}>
+                        {loadingVerbsPro ? (
+                            <Loader />
+                        ) : filteredVerbsPro.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
+                                <Zap size={48} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
+                                <p style={{ fontSize: '1rem' }}>Biblioteca de Tiempos Pro vacía</p>
+                                <p style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                                    {searchQueryVerbsPro ? 'No hay resultados para esta búsqueda.' : 'Haz clic en "Agregar Oración Pro" para registrar tu primer ejercicio.'}
+                                </p>
+                            </div>
+                        ) : (
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '680px' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--text-muted)', textAlign: 'left', fontSize: '0.85rem' }}>
+                                            <th style={{ padding: '0.75rem 0.5rem', width: '35%' }}>Oración con hueco (Inglés)</th>
+                                            <th style={{ padding: '0.75rem 0.5rem', width: '18%', color: 'var(--success)' }}>Forma Correcta</th>
+                                            <th style={{ padding: '0.75rem 0.5rem', width: '22%', color: 'var(--danger)' }}>Distractores</th>
+                                            <th style={{ padding: '0.75rem 0.5rem', width: '25%' }}>Traducción</th>
+                                            <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right', width: '80px' }}>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredVerbsPro.map((item) => (
+                                            <tr key={item.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                                                <td style={{ padding: '0.85rem 0.5rem', color: 'white', fontWeight: 500 }}>
+                                                    {item.sentence}
+                                                </td>
+                                                <td style={{ padding: '0.85rem 0.5rem' }}>
+                                                    <span style={{ 
+                                                        background: 'rgba(16, 185, 129, 0.15)', 
+                                                        color: 'var(--success)', 
+                                                        padding: '0.25rem 0.6rem', 
+                                                        borderRadius: '8px', 
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: 600,
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.3rem'
+                                                    }}>
+                                                        <CheckCircle2 size={13} />
+                                                        {item.correctverbform}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '0.85rem 0.5rem' }}>
+                                                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                                                        <span style={{ background: 'rgba(255, 68, 68, 0.1)', color: '#ff8a8a', padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.8rem' }}>
+                                                            {item.wrongtverbform1}
+                                                        </span>
+                                                        <span style={{ background: 'rgba(255, 68, 68, 0.1)', color: '#ff8a8a', padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.8rem' }}>
+                                                            {item.wrongtverbform2}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '0.85rem 0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                                    {item.traduction}
+                                                </td>
+                                                <td style={{ padding: '0.85rem 0.5rem', textAlign: 'right' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.25rem' }}>
+                                                        <button className="btn-icon" onClick={() => openEditVerbProModal(item)} title="Editar">
+                                                            <Edit size={16} />
+                                                        </button>
+                                                        <button className="btn-icon" onClick={() => handleDeleteVerbPro(item.id)} title="Eliminar" style={{ color: 'var(--danger)' }}>
+                                                            <Trash size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+
+                    {!loadingVerbsPro && verbsPro.length > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                            Total en biblioteca: <strong style={{ color: 'white', marginLeft: '0.25rem' }}>{verbsPro.length} oraciones Pro</strong>
                         </div>
                     )}
                 </>
@@ -1276,6 +1600,123 @@ export function Library() {
                                     disabled={isSavingSentence}
                                 >
                                     {isSavingSentence ? 'Guardando...' : 'Guardar'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            {/* VerbPro Add/Edit Glass Modal */}
+            {isVerbProModalOpen && (
+                <div className="modal-overlay">
+                    <div className="glass-panel modal-content" style={{ padding: '2rem', width: '90%', maxWidth: '500px' }}>
+                        <h2 style={{ fontSize: '1.25rem', color: 'white', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Zap size={18} style={{ color: 'var(--primary)' }} />
+                            {editingVerbPro ? 'Editar Oración Pro' : 'Agregar Nueva Oración Pro'}
+                        </h2>
+
+                        <form onSubmit={handleSaveVerbPro}>
+                            <div className="form-group" style={{ marginBottom: '1rem' }}>
+                                <label className="form-label" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                    Oración con hueco "___" y verbo guía entre paréntesis
+                                </label>
+                                <input 
+                                    type="text" 
+                                    className="input-glass"
+                                    value={sentenceInputPro}
+                                    onChange={(e) => setSentenceInputPro(e.target.value)}
+                                    placeholder="e.g. I ___ to the school yesterday. (Go)"
+                                    autoFocus
+                                    required
+                                />
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', display: 'block' }}>
+                                    Tip: Coloca <strong>___</strong> donde falta el verbo y la pista al final, ej. (Go).
+                                </span>
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: '1rem' }}>
+                                <label className="form-label" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--success)' }}>
+                                    Forma Verbal Correcta
+                                </label>
+                                <input 
+                                    type="text" 
+                                    className="input-glass"
+                                    value={correctVerbFormInput}
+                                    onChange={(e) => setCorrectVerbFormInput(e.target.value)}
+                                    placeholder="e.g. went"
+                                    required
+                                    style={{ borderColor: 'rgba(16, 185, 129, 0.3)' }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                                <div className="form-group">
+                                    <label className="form-label" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: '#ff8a8a' }}>
+                                        Opción Incorrecta 1
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        className="input-glass"
+                                        value={wrongVerbForm1Input}
+                                        onChange={(e) => setWrongVerbForm1Input(e.target.value)}
+                                        placeholder="e.g. gone"
+                                        required
+                                        style={{ borderColor: 'rgba(255, 68, 68, 0.2)' }}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: '#ff8a8a' }}>
+                                        Opción Incorrecta 2
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        className="input-glass"
+                                        value={wrongVerbForm2Input}
+                                        onChange={(e) => setWrongVerbForm2Input(e.target.value)}
+                                        placeholder="e.g. going"
+                                        required
+                                        style={{ borderColor: 'rgba(255, 68, 68, 0.2)' }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                                <label className="form-label" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                    Traducción al Español
+                                </label>
+                                <input 
+                                    type="text" 
+                                    className="input-glass"
+                                    value={traductionInputPro}
+                                    onChange={(e) => setTraductionInputPro(e.target.value)}
+                                    placeholder="e.g. Yo fui a la escuela ayer."
+                                    required
+                                />
+                            </div>
+
+                            {modalErrorVerbPro && (
+                                <p style={{ color: 'var(--danger)', fontSize: '0.85rem', marginBottom: '1rem', padding: '0.5rem 0.75rem', background: 'rgba(207, 102, 121, 0.1)', border: '1px solid rgba(207, 102, 121, 0.2)', borderRadius: '8px' }}>
+                                    {modalErrorVerbPro}
+                                </p>
+                            )}
+
+                            <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                                <button 
+                                    type="button" 
+                                    className="btn" 
+                                    onClick={closeVerbProModal} 
+                                    style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }}
+                                    disabled={isSavingVerbPro}
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    className="btn btn-primary"
+                                    disabled={isSavingVerbPro}
+                                >
+                                    {isSavingVerbPro ? 'Guardando...' : 'Guardar'}
                                 </button>
                             </div>
                         </form>

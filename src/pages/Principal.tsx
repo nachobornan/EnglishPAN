@@ -1,5 +1,5 @@
 import mascotImage from '../assets/mascot.png';
-import { Flame, BookOpen, Clock, Play, Shuffle } from 'lucide-react';
+import { Flame, BookOpen, Clock, Play, Shuffle, Zap } from 'lucide-react';
 import { getUserName } from '../authConfig';
 
 interface PrincipalProps {
@@ -107,6 +107,28 @@ export function Principal({ userEmail, setCurrentView }: PrincipalProps) {
                             <h3 style={{ fontSize: '1.25rem', color: 'white', fontWeight: 600 }}>Armar Oraciones</h3>
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem', lineHeight: '1.4' }}>
                                 Ordena las palabras mezcladas para armar la oración correcta en inglés. ¡Usa pistas o resuélvelo por el puntaje máximo!
+                            </p>
+                        </div>
+                        <div style={{ marginTop: 'auto', width: '100%' }}>
+                            <button className="btn btn-primary" style={{ width: '100%', pointerEvents: 'none' }}>
+                                Ver Ranking y Jugar
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Juego 4: Tiempos Verbales Pro */}
+                    <div 
+                        className="glass-panel game-card"
+                        onClick={() => setCurrentView('tiempos_pro_intro')}
+                        style={{ padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+                    >
+                        <div style={{ background: 'rgba(168, 85, 247, 0.12)', padding: '1rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Zap size={32} style={{ color: '#c084fc' }} />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '1.25rem', color: 'white', fontWeight: 600 }}>Tiempos Verbales Pro</h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem', lineHeight: '1.4' }}>
+                                Completa la oración eligiendo la forma verbal correcta según el contexto y el verbo guía. ¡20 puntos por cada acierto!
                             </p>
                         </div>
                         <div style={{ marginTop: 'auto', width: '100%' }}>

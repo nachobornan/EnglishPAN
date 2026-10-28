@@ -6,6 +6,7 @@ import { Library } from './pages/Library';
 import { GameIntro } from './components/GameIntro';
 import { TiemposPlay } from './pages/TiemposPlay';
 import { OracionesPlay } from './pages/OracionesPlay';
+import { TiemposProPlay } from './pages/TiemposProPlay';
 import mascotImage from './assets/mascot.png';
 import mascotThumbsUp from './assets/mascot_thumbsup.png';
 import Login from './components/Login';
@@ -88,6 +89,20 @@ function App() {
         );
       case 'oraciones_play':
         return <OracionesPlay userEmail={session?.user?.email} setCurrentView={setCurrentView} />;
+      case 'tiempos_pro_intro':
+        return (
+          <GameIntro
+            title="Tiempos Verbales Pro"
+            description="Elige la forma verbal correcta para completar cada oración con ayuda del verbo guía. ¡5 oraciones de 20 puntos cada una!"
+            mascot={mascotThumbsUp}
+            gameType="tiempos_verbales_pro"
+            userEmail={session?.user?.email}
+            onStart={() => setCurrentView('tiempos_pro_play')}
+            onBack={() => setCurrentView('principal')}
+          />
+        );
+      case 'tiempos_pro_play':
+        return <TiemposProPlay userEmail={session?.user?.email} setCurrentView={setCurrentView} />;
       case 'library': {
         const isAdmin = session?.user?.email?.toLowerCase() === ALLOWED_EMAILS[0];
         if (isAdmin) {
